@@ -1,10 +1,7 @@
-<slot />
+<slot/>
 <script>
-    import { handleLogout } from '../logout/+page.server.js';
+    import { session } from "$lib/api/auth";
+    session.subscribe(value => {
+        console.log('Session changed in (todo):', value);
+    });
 </script>
-
-<form on:submit|preventDefault={handleLogout}>
-    <button type="submit">
-        Logout
-    </button>
-</form>

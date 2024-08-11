@@ -1,36 +1,85 @@
-const API_URL = 'http:localhost:5000';
+// Path: /lib/api/auth.js
 
-export async function login( username, password) {
-    console.log("username: ",username, password);
-    const response = await fetch(`${API_URL}/login`, {
+import { writable } from 'svelte/store';
+
+export const session = writable({
+    user_id: null,
+    username: null,
+    isAuthenticated: false
+});
+export const login = async (username, password) => {
+    const response = await fetch('http://localhost:5000/login', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        
-        body: JSON.stringify({
-            username, password
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
     });
-    if (!response.ok){
-        
-        throw new Error('Invalid credentials');
+
+    if (response.ok) {
+        const data = await response.json();
+        console.log("data:", data);
+
+        return data;
+    } else {
+        throw new Error('Login failed');
     }
-    const data = await response.json();
-    return data.access_token;
-}
+};
 
-export async function logout(token) {
-    console.log('function of logout')
-    const response = await fetch(`${API_URL}/logout`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
-
+export const logout = async () => {
+    const response = await fetch('http://localhost:5000/logout', {
+        method: 'POST'
     });
-    if (!response.ok){
-        throw new Error('Failed to logout in async function logout')
+
+    if (response.ok) {
+        return true;
+    } else {
+        throw new Error('Logout failed');
     }
+};
+
+export const getSession = async (cookies) => {
+    console.log("getSession funciton executed: ", cookies.get('session_id'));
+    
+    const response = await fetch('http://localhost:5000/session', {
+        headers: { 'Cookie': cookies.get('session_id')}
+    });
+
+    if (response.ok) {
+        return await response.json();
+    } else {
+        return null;
+    }
+};
+export const loadSession = async (cookies) => {
+    console.log('LoadSession function: cookies: ', cookies.getAll())
+    const response = await fetch('http://localhost:5000/session', {
+        headers: { 'Cookie': cookies.get('session_id') }
+    });
+
+    if (response.ok) {
+        const data = await response.json();
+        session.set({
+            user_id: data.session,
+            username: data.username,
+            isAuthenticated: true
+        });
+
+        session.subscribe((value) => {
+            console.log("load session ok, session: ", value);// This will log the actual data inside the session store
+        });
+        
+        
+        return data;
+    } else {
+        console.log("the is no session data, in ");
+        
+        return null;
+    }
+};
+export function clearSession() {
+    session.set({
+        user_id: null,
+        username: null,
+        isAuthenticated: false
+    });
+    console.log("Session cleared.");
 }

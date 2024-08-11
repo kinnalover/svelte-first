@@ -1,11 +1,17 @@
-import { loadSession } from "$lib/stores/session";
-import {redirect} from '@sveltejs/kit';
-
-export async function load({cookies}){
-    loadSession();
-    const token = cookies.get('token');
-    if (!token) {
-        throw redirect(302, '/login');
+// Path: /routes/(authed)/+layout.server.js
+import { loadSession } from '$lib/api/auth';
+import { redirect } from '@sveltejs/kit';
+export async function load({ cookies }) {
+    console.log("layout cookies:", cookies.getAll())
+    const session = await loadSession(cookies);
+    
+    if (!session) {
+        console.log("no session redirecting to /login")
+        redirect(303, '/login');
     }
-    return {token};
+    else {
+        console.log("+layout.server.js session exists")
+    }
+
+    return { session };
 }
